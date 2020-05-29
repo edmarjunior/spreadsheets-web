@@ -18,9 +18,14 @@ export default function Dashboard() {
         Tabletop.init({
           key: process.env.REACT_APP_APONTAMENTOS_KEY,
           callback: (googleData, config) => {
+            const sheetName = config.foundSheetNames[0];
+
+            toast.info(`Foram lidas ${googleData.length} linhas da aba (${sheetName}). Dica: a leitura é feita até encontrar uma linha em branco, 
+            caso queira ler mais linhas é só digitar algo na 1ª coluna`, { autoClose: 40000 });
+
             let analistas = [];
             
-            setMesAno(config.foundSheetNames[0]);
+            setMesAno(sheetName);
 
             googleData.forEach(row => {
               let nomeAnalista = row.Analista.trim().toLowerCase();
@@ -99,6 +104,10 @@ export default function Dashboard() {
             });
 
             setLoading(false);
+
+            toast.info('Os dois quadros estão ordenados pelas Horas Aprovadas ;)', {autoClose: 40000});
+            toast.info('Selecione os Times para filtrar os Apontamentos ;)', {autoClose: 40000});
+
           },
           simpleSheet: true
         })
