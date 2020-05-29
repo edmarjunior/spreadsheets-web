@@ -22,7 +22,6 @@ export const Container = styled.div`
 `;
 
 export const TableApontamentos = styled.table`
-    
     th {
         background: white;
         position: sticky;
@@ -31,30 +30,20 @@ export const TableApontamentos = styled.table`
         background-color: #f2fcfe;
     }
 
-    td, th {
-        border: 1px solid #ddd;
-    }
-
-    td + td, .no-content {
-        text-align: center;
+    th:first-child {
+        min-width: 265px;
     }
 
     th + th {
         width: 100px;
     }
 
-    th:first-child {
-        min-width: 265px;
+    td, th {
+        border: 1px solid #ddd;
     }
 
     svg {
         margin-right: 4px;
-    }
-
-    tr {
-        :hover {
-            background: rgba(0,204,255, 0.05)
-        }
     }
 `;
 
@@ -62,20 +51,6 @@ export const Scroll = styled(PerfectScrollBar)`
     max-height: 700px;
     border: 1px solid #ddd;
     border-radius: 3px;
-`;
-
-export const TableTimes = styled.table`
-    th, td {
-        text-align: left;
-    } 
-
-    th + th, td + td {
-        text-align: center;
-    }
-
-    td.loading {
-        text-align: center;
-    }
 `;
 
 export const TrTimes = styled.tr`

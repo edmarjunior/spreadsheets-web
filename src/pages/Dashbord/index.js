@@ -3,7 +3,7 @@ import Tabletop from 'tabletop';
 import { MdLabel } from "react-icons/md";
 import { toast } from "react-toastify";
 
-import { Container, TableApontamentos, Scroll, TableTimes, TrTimes, Loading } from './styles';
+import { Container, TableApontamentos, Scroll, TrTimes, Loading } from './styles';
 import { compare, convertToHour, sum, getTimes } from '../../lib/helper';
 
 export default function Dashboard() {
@@ -14,8 +14,6 @@ export default function Dashboard() {
     const [total, setTotal] = useState({});
     const [mesAno, setMesAno] = useState(' Carregando Mes/Ano ...');
    
-    let nameOfSheet;
-
     useEffect(() => {
         Tabletop.init({
           key: process.env.REACT_APP_APONTAMENTOS_KEY,
@@ -153,19 +151,19 @@ export default function Dashboard() {
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan="5" className="no-content"><Loading /></td>
+                    <td colSpan="5" className="acenter"><Loading /></td>
                   </tr>
                 )}
                 {!loading && (
                   !Boolean(analistas.length) && (
                     <tr>
-                      <td colSpan="5" className="no-content">Nenhum registro encontrado na planilha</td>
+                      <td colSpan="5" className="acenter">Nenhum registro encontrado na planilha</td>
                     </tr>
                   )
                   ||
                   Boolean(analistas.length) && !analistas.find(x => x.visible) && (
                     <tr>
-                      <td colSpan="5" className="no-content">Selecione algum time para ver os apontamentos</td>
+                      <td colSpan="5" className="acenter">Selecione algum time para ver os apontamentos</td>
                     </tr>
                   )
                   ||
@@ -174,10 +172,10 @@ export default function Dashboard() {
                   analistas.filter(x => x.visible).map(analista => (
                     <tr key={analista.nome}>
                       <td><MdLabel color={analista.time.cor}/>{analista.nome}</td>
-                      <td>{analista.horasApontadas}</td>
-                      <td>{analista.horasAprovadas}</td>
-                      <td>{analista.horasReprovadas}</td>
-                      <td>{analista.horasNaoAnalisadas}</td>
+                      <td className="acenter">{analista.horasApontadas}</td>
+                      <td className="acenter">{analista.horasAprovadas}</td>
+                      <td className="acenter">{analista.horasReprovadas}</td>
+                      <td className="acenter">{analista.horasNaoAnalisadas}</td>
                     </tr>
                   )
                 ))}
@@ -190,10 +188,10 @@ export default function Dashboard() {
             <h1>Times</h1>
           </header>
           <div>
-            <TableTimes>
+            <table>
               <thead>
                 <tr>
-                  <th colSpan="2">Time</th>
+                  <th class="aleft" colSpan="2">Time</th>
                   <th>Apont.</th>
                   <th>Aprov.</th>
                   <th>Reprov.</th>
@@ -207,21 +205,21 @@ export default function Dashboard() {
                     <td>{time.nome}</td>
 
                     {loading && (
-                      <td className="loading" colSpan="4"><Loading /></td>
+                      <td className="acenter" colSpan="4"><Loading /></td>
                     )}
                    
                     {!loading && (
                       <>
-                      <td>{time.horasApontadas}</td>
-                      <td>{time.horasAprovadas}</td>
-                      <td>{time.horasReprovadas}</td>
-                      <td>{time.horasNaoAnalisadas}</td>
+                      <td className="acenter">{time.horasApontadas}</td>
+                      <td className="acenter">{time.horasAprovadas}</td>
+                      <td className="acenter">{time.horasReprovadas}</td>
+                      <td className="acenter">{time.horasNaoAnalisadas}</td>
                       </>
                     )}
                   </TrTimes>
                 ))}
               </tbody>
-            </TableTimes>
+            </table>
           </div>
         </aside>
       </Container>
