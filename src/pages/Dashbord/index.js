@@ -1,139 +1,229 @@
 import React, { useState, useEffect } from 'react';
 import Tabletop from 'tabletop';
+import { MdLabel } from "react-icons/md";
+import { toast } from "react-toastify";
 
-import { Container, Table, Scroll } from './styles';
-import { compare, convertToHour } from '../../lib/helper';
+import { Container, TableApontamentos, Scroll, TableTimes, TrTimes, Loading } from './styles';
+import { compare, convertToHour, sum, getTimes } from '../../lib/helper';
 
 export default function Dashboard() {
 
     const [loading, setLoading] = useState(true);
     const [analistas, setAnalistas] = useState([]);
-    const [total, setTotal] = useState({
-      apontado: 'calculando ...',
-      aprovado: 'calculando ...',
-      reprovado: 'calculando ...',
-      naoAnalisado: 'calculando ...'
-    });
+    const [times, setTimes] = useState(getTimes());
+    const [total, setTotal] = useState({});
+    const [mesAno, setMesAno] = useState(' Carregando Mes/Ano ...');
+   
+    let nameOfSheet;
 
     useEffect(() => {
         Tabletop.init({
-      
-            key: process.env.REACT_APP_APONTAMENTOS_KEY,
-            callback: googleData => {
-              let analistas = [];
-      
-              googleData.forEach(row => {
-                let nomeAnalista = row.Analista.trim().toLowerCase();
-      
-                if (!nomeAnalista) {
-                  return;
-                }
-      
-                let analista = analistas.find(x => x.nome === nomeAnalista);
+          key: process.env.REACT_APP_APONTAMENTOS_KEY,
+          callback: (googleData, config) => {
+            let analistas = [];
+            
+            setMesAno(config.foundSheetNames[0]);
+
+            googleData.forEach(row => {
+              let nomeAnalista = row.Analista.trim().toLowerCase();
+    
+              if (!nomeAnalista) {
+                return;
+              }
+    
+              let analista = analistas.find(x => x.nome === nomeAnalista);
+              
+              if (!analista) {
+                analista = { 
+                    nome: nomeAnalista,
+                    minutosApontados: 0,
+                    minutosAprovados: 0,
+                    minutosReprovados: 0,
+                    minutosNaoAnalisados: 0,
+                    visible: true,
+                };
                 
-                if (!analista) {
-                  analista = { 
-                      nome: nomeAnalista,
-                      minutosApontados: 0,
-                      minutosAprovados: 0,
-                      minutosReprovados: 0,
-                      minutosNaoAnalisados: 0
-                  };
-                 
-                  analistas.push(analista);
-                }
-      
-                let minutosApontados = +row['Tempo gasto (Minutos)'];
-                let indicadorAprovacao = row['Aprovado? (S/N) [Wagner]'].trim().toLocaleLowerCase();
-                let aprovado = indicadorAprovacao  === 'ok' || indicadorAprovacao === 's';
-      
-                analista.minutosApontados += minutosApontados;
-      
-                if (!indicadorAprovacao){
-                    analista.minutosNaoAnalisados += minutosApontados;
-                } else if (aprovado) {
-                    analista.minutosAprovados += minutosApontados;
-                } else {
-                    analista.minutosReprovados += minutosApontados;
-                }
-              });
-      
-              analistas.forEach(x => {
-                x.horasApontados =  convertToHour(x.minutosApontados);
-                x.horasAprovados =  convertToHour(x.minutosAprovados);
-                x.horasReprovados = convertToHour(x.minutosReprovados);
-                x.horasNaoAnalisados = convertToHour(x.minutosNaoAnalisados);
-              })
-      
-              const totalApontado = analistas.reduce((acumulador, current) => {
-                return acumulador + +current.horasApontados;
-              }, 0);
-      
-              const totalAprovado = analistas.reduce((acumulador, current) => {
-                return acumulador + +current.horasAprovados;
-              }, 0);
-      
-              const totalReprovado = analistas.reduce((acumulador, current) => {
-                return acumulador + +current.horasReprovados;
-              }, 0);
-      
-              const totalNaoAnalisado = analistas.reduce((acumulador, current) => {
-                return acumulador + +current.horasNaoAnalisados;
-              }, 0);
-      
-              setAnalistas(analistas.sort(compare));
+                analistas.push(analista);
+              }
+    
+              let minutosApontados = +row['Tempo gasto (Minutos)'];
+              let indicadorAprovacao = row['Aprovado? (S/N) [Wagner]'].trim().toLocaleLowerCase();
+              let aprovado = indicadorAprovacao  === 'ok' || indicadorAprovacao === 's';
+    
+              analista.minutosApontados += minutosApontados;
+    
+              if (!indicadorAprovacao){
+                  analista.minutosNaoAnalisados += minutosApontados;
+              } else if (aprovado) {
+                  analista.minutosAprovados += minutosApontados;
+              } else {
+                  analista.minutosReprovados += minutosApontados;
+              }
+            });
+    
+            analistas.forEach(x => {
+              x.horasApontadas =  convertToHour(x.minutosApontados);
+              x.horasAprovadas =  convertToHour(x.minutosAprovados);
+              x.horasReprovadas = convertToHour(x.minutosReprovados);
+              x.horasNaoAnalisadas = convertToHour(x.minutosNaoAnalisados);
 
-              setTotal({
-                apontado: totalApontado.toFixed(2),
-                aprovado: totalAprovado.toFixed(2),
-                reprovado: totalReprovado.toFixed(2),
-                naoAnalisado: totalNaoAnalisado.toFixed(2)
-              });
+              let time = times.find(t => t.analistas.indexOf(x.nome) > -1);
+              
+              if (!time) {
+                // atribuindo ao time '6 - outros'
+                time = times.find(t => t.codigo === 6);
+                time.analistas.push(x.nome);
+              }
 
-              setLoading(false);
-            },
-            simpleSheet: true
-          })
+              x.time = time;
+            })
+            
+            const timesAtalizados = times.map(time => {
+              const analistasDoTime = analistas.filter(x => x.time.codigo === time.codigo);
+              return {
+                ...time,
+                horasApontadas: sum(analistasDoTime, 'horasApontadas'),
+                horasAprovadas: sum(analistasDoTime, 'horasAprovadas'),
+                horasReprovadas: sum(analistasDoTime, 'horasReprovadas'),
+                horasNaoAnalisadas: sum(analistasDoTime, 'horasNaoAnalisadas'),
+              };
+            });
+
+            setTimes(timesAtalizados.sort((a, b) => compare(a, b, 'horasAprovadas')));
+
+            setAnalistas(analistas.sort((a, b) => compare(a, b, 'minutosAprovados')));
+
+            setTotal({
+              apontado: sum(analistas, 'horasApontadas'),
+              aprovado: sum(analistas, 'horasAprovadas'),
+              reprovado: sum(analistas, 'horasReprovadas'),
+              naoAnalisado: sum(analistas, 'horasNaoAnalisadas')
+            });
+
+            setLoading(false);
+          },
+          simpleSheet: true
+        })
     }, [])
+
+    function handleCheckTimes(codigo) {
+      
+      if (loading) {
+        toast.info("Aguarde o carregamento da planilha")
+        return;
+      }
+
+      setTimes(times.map(time => 
+        time.codigo === codigo ? { ...time, checked: !time.checked } : time
+      ));
+
+      const analistasAtualizado = analistas.map(analista => 
+        analista.time.codigo === codigo ? { ...analista, visible: !analista.visible } : analista
+      );
+
+      setAnalistas(analistasAtualizado);
+
+      const analistasVisible = analistasAtualizado.filter(analista => analista.visible);
+
+      setTotal({
+        apontado: sum(analistasVisible, 'horasApontadas'),
+        aprovado: sum(analistasVisible, 'horasAprovadas'),
+        reprovado: sum(analistasVisible, 'horasReprovadas'),
+        naoAnalisado: sum(analistasVisible, 'horasNaoAnalisadas')
+      });
+    }
 
     return (
       <Container >
-        
         <aside>
           <header>
-            <h1>Apontamentos</h1>
+            <h1>Apontamentos de: {loading ? <Loading /> : mesAno}</h1>
           </header>
           <Scroll>
-          <Table>
-            <thead>
-              <tr>
-                <th>Análista</th>
-                <th>Horas Apontadas ({total.apontado})</th>
-                <th>Horas Aprovadas ({total.aprovado})</th>
-                <th>Horas Reprovadas ({total.reprovado})</th>
-                <th>Horas Não analisadas ({total.naoAnalisado})</th>
-              </tr>
-            </thead>
-            <tbody>
-                { !loading && analistas.map(analista => (
-                  <tr key={analista.nome}>
-                    <td>{analista.nome}</td>
-                    <td>{analista.horasApontados}</td>
-                    <td>{analista.horasAprovados}</td>
-                    <td>{analista.horasReprovados}</td>
-                    <td>{analista.horasNaoAnalisados}</td>
-                  </tr>
-                ))}
+            <TableApontamentos>
+              <thead>
+                <tr>
+                  <th>Análista</th>
+                  <th>Horas Apontadas {loading ? <Loading /> : (total.apontado)}</th>
+                  <th>Horas Aprovadas {loading ? <Loading /> : (total.aprovado)}</th>
+                  <th>Horas Reprovadas {loading ? <Loading /> : (total.reprovado)}</th>
+                  <th>Horas Não analisadas {loading ? <Loading /> : (total.naoAnalisado)}</th>
+                </tr>
+              </thead>
+              <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan="5" className="no-content"> Carregando ...</td>
+                    <td colSpan="5" className="no-content"><Loading /></td>
                   </tr>
                 )}
-            </tbody>
-          </Table>
-        </Scroll>
+                {!loading && (
+                  !Boolean(analistas.length) && (
+                    <tr>
+                      <td colSpan="5" className="no-content">Nenhum registro encontrado na planilha</td>
+                    </tr>
+                  )
+                  ||
+                  Boolean(analistas.length) && !analistas.find(x => x.visible) && (
+                    <tr>
+                      <td colSpan="5" className="no-content">Selecione algum time para ver os apontamentos</td>
+                    </tr>
+                  )
+                  ||
+                  Boolean(analistas.length) && 
+                  analistas.find(x => x.visible) && 
+                  analistas.filter(x => x.visible).map(analista => (
+                    <tr key={analista.nome}>
+                      <td><MdLabel color={analista.time.cor}/>{analista.nome}</td>
+                      <td>{analista.horasApontadas}</td>
+                      <td>{analista.horasAprovadas}</td>
+                      <td>{analista.horasReprovadas}</td>
+                      <td>{analista.horasNaoAnalisadas}</td>
+                    </tr>
+                  )
+                ))}
+              </tbody>
+            </TableApontamentos>
+          </Scroll>
         </aside>
-        
+        <aside>
+          <header>
+            <h1>Times</h1>
+          </header>
+          <div>
+            <TableTimes>
+              <thead>
+                <tr>
+                  <th colSpan="2">Time</th>
+                  <th>Apont.</th>
+                  <th>Aprov.</th>
+                  <th>Reprov.</th>
+                  <th>Ñ/analis.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {times.map(time => (
+                  <TrTimes checked={time.checked} onClick={() => { handleCheckTimes(time.codigo) }}>
+                    <td><MdLabel color={time.cor} /></td>
+                    <td>{time.nome}</td>
+
+                    {loading && (
+                      <td className="loading" colSpan="4"><Loading /></td>
+                    )}
+                   
+                    {!loading && (
+                      <>
+                      <td>{time.horasApontadas}</td>
+                      <td>{time.horasAprovadas}</td>
+                      <td>{time.horasReprovadas}</td>
+                      <td>{time.horasNaoAnalisadas}</td>
+                      </>
+                    )}
+                  </TrTimes>
+                ))}
+              </tbody>
+            </TableTimes>
+          </div>
+        </aside>
       </Container>
     )
 }

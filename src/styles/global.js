@@ -1,5 +1,6 @@
 import { createGlobalStyle } from "styled-components";
 import 'react-perfect-scrollbar/dist/css/styles.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default createGlobalStyle`
 
@@ -13,5 +14,17 @@ export default createGlobalStyle`
     body {
         height: 100%;
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+
+    table {
+        
+        tr {
+            line-height: 26px;
+        }
+
+        td, th {
+            padding: 5px;
+            margin: 0;
+        }
     }
 `;
