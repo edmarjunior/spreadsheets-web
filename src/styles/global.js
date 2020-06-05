@@ -30,6 +30,7 @@ export default createGlobalStyle`
     .aleft {
         text-align: left;
     }
+
     .acenter {
         text-align: center;
     }

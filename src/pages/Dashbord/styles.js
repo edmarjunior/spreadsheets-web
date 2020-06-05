@@ -28,6 +28,12 @@ export const TableApontamentos = styled.table`
         top: 0;
         box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
         background-color: #f2fcfe;
+        cursor: pointer;
+        div {
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+        }
     }
 
     th:first-child {
