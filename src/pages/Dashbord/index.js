@@ -102,9 +102,11 @@ export default function Dashboard() {
       return;
     }
 
-    setTimes(times.map(time =>
+    const timesAtualizados = times.map(time =>
       time.id === id ? { ...time, checked: !time.checked } : time
-    ));
+    );
+
+    setTimes(timesAtualizados);
 
     const analistasAtualizado = analistas.map(analista =>
       analista.time.id === id ? { ...analista, visible: !analista.visible } : analista
@@ -120,6 +122,13 @@ export default function Dashboard() {
       reprovado: sum(analistasVisible, 'horas_reprovadas'),
       naoAnalisado: sum(analistasVisible, 'horas_nao_analisadas')
     });
+
+    if (timesAtualizados.filter(time => !time.checked).length && checkAllTime) {
+      setCheckAllTime(false);
+    }
+    else if (timesAtualizados.every(time => time.checked) && !checkAllTime) {
+      setCheckAllTime(true);
+    }
   }
 
   // times - ordenação
