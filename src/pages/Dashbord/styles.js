@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 import PerfectScrollBar from 'react-perfect-scrollbar';
 import { MdRefresh } from "react-icons/md";
+import { darken } from 'polished';
 
 export const Container = styled.div`
     display: flex;
@@ -28,7 +29,6 @@ export const TableApontamentos = styled.table`
         top: 0;
         box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
         background-color: #f2fcfe;
-        cursor: pointer;
         div {
             display: flex;
             align-items: center;
@@ -41,7 +41,12 @@ export const TableApontamentos = styled.table`
     }
 
     th + th {
+        cursor: pointer;
         width: 100px;
+
+        :hover {
+            background: ${darken(0.5, 'rgba(0,204,255, 0.05)')}
+        }
     }
 
     td, th {
@@ -84,4 +89,13 @@ export const Loading = styled(MdRefresh).attrs(props => ({
         }
     }
 
+`;
+
+export const ThTime = styled.th`
+    cursor: pointer;
+    width: 85px;
+
+    :hover {
+        background: ${darken(0.5, 'rgba(0,204,255, 0.05)')}
+    }
 `;

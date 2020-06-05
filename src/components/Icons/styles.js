@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { MdArrowDownward } from "react-icons/md";
 
 export const ArrowDownward = styled(MdArrowDownward).attrs(props => ({
-    size: 20,
+    size: props.size || 15,
     color: '#07ADF5',
     className: 'ico-arrow-down',
     title: props.order === 'asc' ? 'Ordenado do Menor para o Maior' : 'Ordenado do Maior para o Menor',

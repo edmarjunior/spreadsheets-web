@@ -6,7 +6,7 @@ import api from "../../services/api";
 import { sum } from '../../lib/helper';
 import { ArrowDownward } from '../../components/Icons/styles';
 import { compare } from '../../lib/helper';
-import { Container, TableApontamentos, Scroll, TrTimes, Loading } from './styles';
+import { Container, TableApontamentos, Scroll, ThTime, TrTimes, Loading } from './styles';
 
 export default function Dashboard() {
 
@@ -16,7 +16,8 @@ export default function Dashboard() {
   const [total, setTotal] = useState({});
   const [mesAno, setMesAno] = useState(' Carregando Mes/Ano ...');
   const [checkAllTime, setCheckAllTime] = useState(true);
-  const [order, setOrder] = useState({ coluna: 3, order: 'desc' });
+  const [order, setOrder] = useState({ campo: 'horas_aprovadas', direcao: 'desc' });
+  const [orderTime, setOrderTime] = useState({ campo: 'horas_aprovadas', direcao: 'desc' });
 
   useEffect(() => {
     async function getDados() {
@@ -51,6 +52,26 @@ export default function Dashboard() {
     getDados();
 
   }, [])
+
+  // analistas - ordenação
+
+  function handleOrdenacaoAnalista() {
+    const direcao = order.direcao === 'desc' ? 'asc' : 'desc';
+
+    setOrder({ campo: order.campo, direcao });
+    setAnalistas(analistas.sort((a, b) => compare(a, b, order.campo, direcao)));
+  }
+
+  function handleOrdenacaoTrocaCampoAnalista(campo) {
+    if (order.campo === campo) {
+      return;
+    }
+
+    setOrder({ campo, direcao: 'desc' });
+    setAnalistas(analistas.sort((a, b) => compare(a, b, campo, 'desc')))
+  }
+
+  // times - checkbox's
 
   function handleCheckAllTimes() {
     const acaoAtual = !checkAllTime;
@@ -101,40 +122,21 @@ export default function Dashboard() {
     });
   }
 
-  function handleArrowDownward() {
-    const ordernacao = order.order === 'desc' ? 'asc' : 'desc';
-    setOrder({ coluna: order.coluna, order: ordernacao });
+  // times - ordenação
+  function handleOrdenacaoTime() {
+    const direcao = orderTime.direcao === 'desc' ? 'asc' : 'desc';
 
-    orderAnalistas(order.coluna, ordernacao);
+    setOrderTime({ campo: orderTime.campo, direcao });
+    setTimes(times.sort((a, b) => compare(a, b, orderTime.campo, direcao)))
   }
 
-  function handleOrder(codigoColuna) {
-    if (order.coluna === codigoColuna) {
+  function handleOrdenacaoTrocaCampoTime(campo) {
+    if (orderTime.campo === campo) {
       return;
     }
 
-    setOrder({ coluna: codigoColuna, order: 'desc' });
-
-    orderAnalistas(codigoColuna, 'desc');
-  }
-
-  function orderAnalistas(coluna, ordenacao) {
-
-    let campo;
-
-    if (coluna === 2) {
-      campo = 'horas_apontadas';
-    }
-    else if (coluna === 3) {
-      campo = 'horas_aprovadas';
-    }
-    else if (coluna === 4) {
-      campo = 'horas_reprovadas';
-    }
-    else
-      campo = 'horas_nao_analisadas';
-
-    setAnalistas(analistas.sort((a, b) => compare(a, b, campo, ordenacao)))
+    setOrderTime({ campo, direcao: 'desc' });
+    setTimes(times.sort((a, b) => compare(a, b, campo, 'desc')))
   }
 
   return (
@@ -148,40 +150,40 @@ export default function Dashboard() {
             <thead>
               <tr>
                 <th>Análista</th>
-                <th onClick={() => handleOrder(2)}>
+                <th onClick={() => handleOrdenacaoTrocaCampoAnalista('horas_apontadas')}>
                   Horas Apontadas
                   <div>
                     <span>
                       {loading ? <Loading /> : (total.apontado)}
                     </span>
-                    {!loading && order.coluna === 2 && <ArrowDownward onClick={handleArrowDownward} order={order.order} />}
+                    {!loading && order.campo === 'horas_apontadas' && <ArrowDownward onClick={handleOrdenacaoAnalista} order={order.direcao} />}
                   </div>
                 </th>
-                <th onClick={() => handleOrder(3)}>
+                <th onClick={() => handleOrdenacaoTrocaCampoAnalista('horas_aprovadas')}>
                   Horas Aprovadas
                   <div>
                     <span>
                       {loading ? <Loading /> : (total.aprovado)}
                     </span>
-                    {!loading && order.coluna === 3 && <ArrowDownward onClick={handleArrowDownward} order={order.order} />}
+                    {!loading && order.campo === 'horas_aprovadas' && <ArrowDownward onClick={handleOrdenacaoAnalista} order={order.direcao} />}
                   </div>
                 </th>
-                <th onClick={() => handleOrder(4)}>
+                <th onClick={() => handleOrdenacaoTrocaCampoAnalista('horas_reprovadas')}>
                   Horas Reprovadas
                   <div>
                     <span>
                       {loading ? <Loading /> : (total.reprovado)}
                     </span>
-                    {!loading && order.coluna === 4 && <ArrowDownward onClick={handleArrowDownward} order={order.order} />}
+                    {!loading && order.campo === 'horas_reprovadas' && <ArrowDownward onClick={handleOrdenacaoAnalista} order={order.direcao} />}
                   </div>
                 </th>
-                <th onClick={() => handleOrder(5)}>
+                <th onClick={() => handleOrdenacaoTrocaCampoAnalista('horas_nao_analisadas')}>
                   Horas Não analisadas
                   <div>
                     <span>
                       {loading ? <Loading /> : (total.naoAnalisado)}
                     </span>
-                    {!loading && order.coluna === 5 && <ArrowDownward onClick={handleArrowDownward} order={order.order} />}
+                    {!loading && order.campo === 'horas_nao_analisadas' && <ArrowDownward onClick={handleOrdenacaoAnalista} order={order.direcao} />}
                   </div>
                 </th>
               </tr>
@@ -229,12 +231,26 @@ export default function Dashboard() {
           <table>
             <thead>
               <tr>
-                <th><input type="checkbox" value={checkAllTime} onClick={handleCheckAllTimes} checked={checkAllTime} /></th>
+                <th>
+                  <input type="checkbox" value={checkAllTime} onClick={handleCheckAllTimes} checked={checkAllTime} />
+                </th>
                 <th class="aleft">Time</th>
-                <th>Apont.</th>
-                <th>Aprov.</th>
-                <th>Reprov.</th>
-                <th>Ñ/analis.</th>
+                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_apontadas')}>
+                  Apont.
+                  {orderTime.campo === 'horas_apontadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
+                </ThTime>
+                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_aprovadas')}>
+                  Aprov.
+                  {orderTime.campo === 'horas_aprovadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
+                </ThTime>
+                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_reprovadas')}>
+                  Reprov.
+                  {orderTime.campo === 'horas_reprovadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
+                </ThTime>
+                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_nao_analisadas')}>
+                  Ñ/analis.
+                  {orderTime.campo === 'horas_nao_analisadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
+                </ThTime>
               </tr>
             </thead>
             <tbody>
