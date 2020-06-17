@@ -226,7 +226,7 @@ export default function Dashboard() {
             <thead>
               <tr>
                 <th>
-                  <input type="checkbox" value={checkAllTime} onClick={handleCheckAllTimes} checked={checkAllTime} />
+                  <input type="checkbox" value={checkAllTime} onChange={handleCheckAllTimes} checked={checkAllTime} />
                 </th>
                 <th className="aleft">Time</th>
                 <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_apontadas')}>
@@ -255,15 +255,15 @@ export default function Dashboard() {
                 )
               }
               {times.map(time => (
-                <TrTimes checked={time.checked} onClick={() => { handleCheckTimes(time.id) }}>
+                <TrTimes key={time.id} checked={time.checked} onClick={() => { handleCheckTimes(time.id) }}>
                   <td><MdLabel color={time.cor_hexa} /></td>
                   <td>{time.nome}</td>
 
-                  {loading && (
+                  {Boolean(loading) && (
                     <td className="acenter" colSpan="4"><Loading /></td>
                   )}
 
-                  {!loading && (
+                  {!Boolean(loading) && (
                     <>
                       <td className="acenter">{time.horas_apontadas}</td>
                       <td className="acenter">{time.horas_aprovadas}</td>
@@ -330,22 +330,24 @@ export default function Dashboard() {
                   <td colSpan="5" className="acenter"><Loading /></td>
                 </tr>
               )}
-              {!loading && (
-                !Boolean(analistas.length) && (
+
+              {!loading && !Boolean(analistas.length) && (
                   <tr>
                     <td colSpan="5" className="acenter">Nenhum registro encontrado na planilha</td>
                   </tr>
                 )
-                ||
-                Boolean(analistas.length) && !analistas.find(x => x.visible) && (
+              }
+
+              {!loading && Boolean(analistas.length) && !analistas.find(x => x.visible) && (
                   <tr>
                     <td colSpan="5" className="acenter">Selecione algum time para ver os apontamentos</td>
                   </tr>
                 )
-                ||
-                Boolean(analistas.length) &&
-                analistas.find(x => x.visible) &&
-                analistas.filter(x => x.visible).map(analista => (
+              }
+
+              {!loading && Boolean(analistas.length) 
+                        && analistas.find(x => x.visible) 
+                        && analistas.filter(x => x.visible).map(analista => (
                   <tr key={analista.nome}>
                     <td><MdLabel color={analista.time.cor_hexa} />{analista.nome}</td>
                     <td className="acenter">{analista.horas_apontadas}</td>
@@ -353,8 +355,8 @@ export default function Dashboard() {
                     <td className="acenter">{analista.horas_reprovadas}</td>
                     <td className="acenter">{analista.horas_nao_analisadas}</td>
                   </tr>
-                )
-                ))}
+                ))
+              }
             </tbody>
           </TableApontamentos>
         </Scroll>
