@@ -1,57 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import { MdLabel } from "react-icons/md";
 import { toast } from "react-toastify";
+import { MdSync } from "react-icons/md";
 
 import api from "../../services/api";
 import { sum } from '../../lib/helper';
 import { ArrowDownward } from '../../components/Icons/styles';
 import { compare } from '../../lib/helper';
-import { Container, TableApontamentos, Scroll, ThTime, TrTimes, Loading } from './styles';
+import { Container, TableApontamentos, Scroll, ThTime, TrTimes, Loading, ButtonSync } from './styles';
 
 export default function Dashboard() {
+  const [periodos, setPeriodos] = useState([
+    {
+      value: '6/2020',
+      nome: 'Junho/2020',
+      selected: true,
+    },
+    {
+      value: '5/2020',
+      nome: 'Maio/2020',
+      selected: false,
+    },
+  ]);
 
   const [loading, setLoading] = useState(true);
   const [analistas, setAnalistas] = useState([]);
   const [times, setTimes] = useState([]);
   const [total, setTotal] = useState({});
-  const [mesAno, setMesAno] = useState(' Carregando Mes/Ano ...');
   const [checkAllTime, setCheckAllTime] = useState(true);
   const [order, setOrder] = useState({ campo: 'horas_aprovadas', direcao: 'desc' });
   const [orderTime, setOrderTime] = useState({ campo: 'horas_aprovadas', direcao: 'desc' });
-
+  const [loadingSync, setLoadingSync] = useState(false);
+  
   useEffect(() => {
-    async function getDados() {
-      setMesAno("Maio/2020");
+    const [mes, ano] = periodos.find(x => x.selected).value.split('/');
+    getDados(mes, ano);
+  }, [periodos])
 
-      const responseAnalistas = await api.get('apontamentos-analistas');
+  async function getDados(mes, ano) {
+    setLoading(true);
 
-      const analistas = responseAnalistas.data;
+    const responseAnalistas = await api.get('apontamentos-analistas', {
+      params: {
+        mes,
+        ano
+      }
+    });
 
-      setAnalistas(analistas.map(analista => ({
-        ...analista,
-        visible: true,
-      })));
+    const analistas = responseAnalistas.data;
 
-      setTotal({
-        apontado: sum(analistas, 'horas_apontadas'),
-        aprovado: sum(analistas, 'horas_aprovadas'),
-        reprovado: sum(analistas, 'horas_reprovadas'),
-        naoAnalisado: sum(analistas, 'horas_nao_analisadas')
-      });
+    setAnalistas(analistas.map(analista => ({
+      ...analista,
+      visible: true,
+    })));
 
-      const responseTimes = await api.get('apontamentos-times');
+    setTotal({
+      apontado: sum(analistas, 'horas_apontadas'),
+      aprovado: sum(analistas, 'horas_aprovadas'),
+      reprovado: sum(analistas, 'horas_reprovadas'),
+      naoAnalisado: sum(analistas, 'horas_nao_analisadas')
+    });
 
-      setTimes(responseTimes.data.map(time => ({
-        ...time,
-        checked: true
-      })));
+    const responseTimes = await api.get('apontamentos-times', {
+      params: {
+        mes,
+        ano
+      }
+    });
 
-      setLoading(false);
-    };
+    setTimes(responseTimes.data.map(time => ({
+      ...time,
+      checked: true
+    })));
 
-    getDados();
+    setCheckAllTime(true);
 
-  }, [])
+    setLoading(false);
+  };
 
   // analistas - ordenação
 
@@ -148,11 +173,113 @@ export default function Dashboard() {
     setTimes(times.sort((a, b) => compare(a, b, campo, 'desc')))
   }
 
+  function handlePeriodo(event) {
+    setPeriodos(periodos.map(periodo => ({
+      ...periodo,
+      selected: periodo.value === event.target.value
+    })))
+  }
+
+  async function handleSincronizacao() {
+
+    if (loadingSync) {
+      toast.warning('Aguarde! estamos realizando a sincronização');
+      return;
+    }
+
+    setLoadingSync(true);
+    const periodoSelecionado = periodos.find(x => x.selected);
+    const [mes, ano] = periodoSelecionado.value.split('/');
+
+    const response = await api.get('apontamentos-planilha-sincronizar', {
+      params: {
+        mes,
+        ano,
+      }
+    });
+
+    const options = {autoClose: 25000 };
+
+    toast.info(`Sucesso! Base de dados sincronizada com a planilha de ${periodoSelecionado.nome}`, options);
+    toast.info("Ultima linha lida da planilha: " + response.data.ultima_linha_lida, options);
+    toast.info("Quantidade apontamentos antes: " + response.data.qtd_apontamentos_antes, options);
+    toast.info("Quantidade apontamentos atual: " + response.data.qtd_apontamentos_atual, options);
+
+    setLoadingSync(false);
+
+    getDados(mes, ano);
+  }
+
   return (
     <Container >
       <aside>
         <header>
-          <h1>Apontamentos de: {loading ? <Loading /> : mesAno}</h1>
+          <h1>Times</h1>
+          <select onChange={handlePeriodo}>
+            {periodos.map(periodo => (
+              <option key={periodo.value} value={periodo.value}>{periodo.nome}</option>
+            ))}
+          </select>
+        </header>
+        <div>
+          <table style={{width: '100%'}}>
+            <thead>
+              <tr>
+                <th>
+                  <input type="checkbox" value={checkAllTime} onClick={handleCheckAllTimes} checked={checkAllTime} />
+                </th>
+                <th className="aleft">Time</th>
+                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_apontadas')}>
+                  Apont.
+                  {orderTime.campo === 'horas_apontadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
+                </ThTime>
+                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_aprovadas')}>
+                  Aprov.
+                  {orderTime.campo === 'horas_aprovadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
+                </ThTime>
+                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_reprovadas')}>
+                  Reprov.
+                  {orderTime.campo === 'horas_reprovadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
+                </ThTime>
+                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_nao_analisadas')}>
+                  Ñ/analis.
+                  {orderTime.campo === 'horas_nao_analisadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
+                </ThTime>
+              </tr>
+            </thead>
+            <tbody>
+              {!Boolean(times.length) && (
+                  <tr>
+                    <td colSpan="6" className="acenter">Nenhum time teve apontamento</td>
+                  </tr>
+                )
+              }
+              {times.map(time => (
+                <TrTimes checked={time.checked} onClick={() => { handleCheckTimes(time.id) }}>
+                  <td><MdLabel color={time.cor_hexa} /></td>
+                  <td>{time.nome}</td>
+
+                  {loading && (
+                    <td className="acenter" colSpan="4"><Loading /></td>
+                  )}
+
+                  {!loading && (
+                    <>
+                      <td className="acenter">{time.horas_apontadas}</td>
+                      <td className="acenter">{time.horas_aprovadas}</td>
+                      <td className="acenter">{time.horas_reprovadas}</td>
+                      <td className="acenter">{time.horas_nao_analisadas}</td>
+                    </>
+                  )}
+                </TrTimes>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </aside>
+      <aside>
+        <header>
+          <h1>Analistas</h1>
         </header>
         <Scroll>
           <TableApontamentos>
@@ -232,60 +359,9 @@ export default function Dashboard() {
           </TableApontamentos>
         </Scroll>
       </aside>
-      <aside>
-        <header>
-          <h1>Times</h1>
-        </header>
-        <div>
-          <table>
-            <thead>
-              <tr>
-                <th>
-                  <input type="checkbox" value={checkAllTime} onClick={handleCheckAllTimes} checked={checkAllTime} />
-                </th>
-                <th class="aleft">Time</th>
-                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_apontadas')}>
-                  Apont.
-                  {orderTime.campo === 'horas_apontadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
-                </ThTime>
-                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_aprovadas')}>
-                  Aprov.
-                  {orderTime.campo === 'horas_aprovadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
-                </ThTime>
-                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_reprovadas')}>
-                  Reprov.
-                  {orderTime.campo === 'horas_reprovadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
-                </ThTime>
-                <ThTime onClick={() => handleOrdenacaoTrocaCampoTime('horas_nao_analisadas')}>
-                  Ñ/analis.
-                  {orderTime.campo === 'horas_nao_analisadas' && <ArrowDownward onClick={() => handleOrdenacaoTime()} order={orderTime.direcao} />}
-                </ThTime>
-              </tr>
-            </thead>
-            <tbody>
-              {times.map(time => (
-                <TrTimes checked={time.checked} onClick={() => { handleCheckTimes(time.id) }}>
-                  <td><MdLabel color={time.cor_hexa} /></td>
-                  <td>{time.nome}</td>
-
-                  {loading && (
-                    <td className="acenter" colSpan="4"><Loading /></td>
-                  )}
-
-                  {!loading && (
-                    <>
-                      <td className="acenter">{time.horas_apontadas}</td>
-                      <td className="acenter">{time.horas_aprovadas}</td>
-                      <td className="acenter">{time.horas_reprovadas}</td>
-                      <td className="acenter">{time.horas_nao_analisadas}</td>
-                    </>
-                  )}
-                </TrTimes>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </aside>
+      <ButtonSync loading={loadingSync} onClick={handleSincronizacao}>
+        <MdSync size={40} color="#fff"/>
+      </ButtonSync>
     </Container>
   )
 }

@@ -34,4 +34,12 @@ export default createGlobalStyle`
     .acenter {
         text-align: center;
     }
+
+    select {
+        padding: 5px;
+
+        option {
+            font-size: 15px;
+        }
+    }
 `;

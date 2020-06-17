@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import PerfectScrollBar from 'react-perfect-scrollbar';
 import { MdRefresh } from "react-icons/md";
 import { darken } from 'polished';
@@ -7,9 +7,17 @@ export const Container = styled.div`
     display: flex;
     justify-content: center;
     padding: 10px;
-    
+    flex-wrap: wrap;
+
     aside {
-        max-width: 50%;
+        @media(min-width: 800px) {
+            max-width: 50%;
+        }
+
+        @media(max-width: 800px) {
+            width: 90%;
+        }
+
         padding: 15px;
         margin: 5px; 
         box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.1);
@@ -18,6 +26,8 @@ export const Container = styled.div`
 
         header {
             margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
         }
     }
 `;
@@ -36,13 +46,8 @@ export const TableApontamentos = styled.table`
         }
     }
 
-    th:first-child {
-        min-width: 265px;
-    }
-
     th + th {
         cursor: pointer;
-        width: 100px;
 
         :hover {
             background: ${darken(0.5, 'rgba(0,204,255, 0.05)')}
@@ -93,9 +98,47 @@ export const Loading = styled(MdRefresh).attrs(props => ({
 
 export const ThTime = styled.th`
     cursor: pointer;
-    width: 85px;
 
     :hover {
         background: ${darken(0.5, 'rgba(0,204,255, 0.05)')}
     }
+`;
+
+
+export const ButtonSync = styled.button.attrs({
+    title: 'Sincronizar dados'
+})`
+    position: fixed;
+    top: 90%;
+    left: 90%;
+    background: #07ADF5;
+    border-radius: 50%;
+    padding: 5px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+
+    :hover {
+        background: ${darken(0.1, '#07ADF5')};
+        border: 2px solid ${darken(0.1, '#ddd')};
+    }
+
+    ${props => props.loading && css`
+        cursor: not-allowed;
+
+        svg {
+
+            animation: rotating 0.6s linear infinite;
+            
+
+            @keyframes rotating {
+                from {
+                    transform: rotate(0deg);
+                }
+
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+        }
+    `}
 `;
