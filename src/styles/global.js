@@ -1,5 +1,6 @@
 import { createGlobalStyle } from "styled-components";
 import 'react-perfect-scrollbar/dist/css/styles.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default createGlobalStyle`
@@ -7,7 +8,6 @@ export default createGlobalStyle`
         margin: 0;
         padding: 0;
         outline: 0;
-
     }
 
     body {
@@ -42,4 +42,22 @@ export default createGlobalStyle`
             font-size: 15px;
         }
     }
+
+    /* .card {
+        background-color: #fff;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+        word-wrap: break-word;
+
+        @media(min-width: 700px) {
+            width: 50%;
+        }
+
+        @media(max-width: 700px) {
+            width: 100%;
+        }
+    } */
 `;

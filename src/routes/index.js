@@ -1,12 +1,13 @@
 import React from 'react';
 import { Route, Switch } from 'react-router-dom'
 
-import Dashboard from '../pages/Dashbord';
+import Apontamentos from '../pages/Apontamentos';
 
 export default function Routes() {
     return (
         <Switch>
-            <Route to="/" exact component={Dashboard} />
+            <Route to="/" exact component={Apontamentos} />
+            <Route to="/apontamentos" exact component={Apontamentos} />
         </Switch>
     )
 }

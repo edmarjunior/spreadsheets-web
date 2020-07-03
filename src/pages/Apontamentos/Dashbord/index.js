@@ -3,10 +3,10 @@ import { MdLabel } from "react-icons/md";
 import { toast } from "react-toastify";
 import { MdSync } from "react-icons/md";
 
-import api from "../../services/api";
-import { sum } from '../../lib/helper';
-import { ArrowDownward } from '../../components/Icons/styles';
-import { compare } from '../../lib/helper';
+import api from "../../../services/api";
+import { sum } from '../../../lib/helper';
+import { ArrowDownward } from '../../../components/Icons/styles';
+import { compare } from '../../../lib/helper';
 import { Container, TableApontamentos, Scroll, ThTime, TrTimes, Loading, ButtonSync } from './styles';
 
 export default function Dashboard() {
@@ -361,7 +361,7 @@ export default function Dashboard() {
           </TableApontamentos>
         </Scroll>
       </aside>
-      <ButtonSync loading={loadingSync} onClick={handleSincronizacao}>
+      <ButtonSync carregando={loadingSync} onClick={handleSincronizacao}>
         <MdSync size={40} color="#fff"/>
       </ButtonSync>
     </Container>

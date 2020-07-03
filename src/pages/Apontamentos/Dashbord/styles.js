@@ -122,7 +122,7 @@ export const ButtonSync = styled.button.attrs({
         border: 2px solid ${darken(0.1, '#ddd')};
     }
 
-    ${props => props.loading && css`
+    ${props => props.carregando && css`
         cursor: not-allowed;
 
         svg {
