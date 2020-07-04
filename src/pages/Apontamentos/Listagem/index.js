@@ -8,6 +8,7 @@ export default function Listagem() {
 
     const [times, setTimes] = useState([]);
     const [analistas, setAnalistas] = useState([]);
+    const [apontamentos, setApontamentos] = useState([]);
     const [situacoes, setSituacoes] = useState([
         {
             id: 1,
@@ -85,6 +86,41 @@ export default function Listagem() {
         })));
     }
 
+    const buscarApontamentos = async (event) => {
+        event.preventDefault();
+
+        let rangeAnalistas;
+
+        const analistasSelecionado = analistas.filter(analista => analista.selecionado);
+
+        if (analistas.length === analistasSelecionado.length) {
+            rangeAnalistas = 'todos'
+        } else {
+            rangeAnalistas = analistasSelecionado.map(analista => analista.id).join(',');
+        }
+
+        let rangeSituacoes;
+
+        const situacoesSelecionado = situacoes.filter(situacao => situacao.selecionado);
+
+        if (situacoes.length === situacoesSelecionado.length) {
+            rangeSituacoes = 'todos'
+        } else {
+            rangeSituacoes = situacoesSelecionado.map(situacao => situacao.id).join(',');
+        }
+
+        const { data: apontamentosEncontrados } = await api.get("/apontamentos", {
+            params: {
+                analistas: rangeAnalistas,
+                situacoes: rangeSituacoes,
+                mes: 6,
+                ano: 2020,
+            }
+        });
+
+        setApontamentos(apontamentosEncontrados);
+    }
+
     return (
         <>
             <div className="card">
@@ -134,9 +170,15 @@ export default function Listagem() {
                         
                         <div className="d-flex justify-content-center">
                             <div>
-                                <Button onClick={() => selecionarFiltros(true)} variant="light">Selecionar todos</Button>
-                                <Button onClick={() => selecionarFiltros(false)} variant="light" className="ml-1">Limpar filtros</Button>
-                                <Button type="submit" style={{width: '200px'}} className="ml-1">Buscar</Button>
+                                <Button onClick={() => selecionarFiltros(true)} variant="light">
+                                    Selecionar todos
+                                </Button>
+                                <Button onClick={() => selecionarFiltros(false)} variant="light" className="ml-1">
+                                    Limpar filtros
+                                </Button>
+                                <Button type="submit" onClick={buscarApontamentos} style={{width: '200px'}} className="ml-1">
+                                    Buscar
+                                </Button>
                             </div>
                         </div>
                     </Form>
@@ -161,21 +203,25 @@ export default function Listagem() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>#</td>
-                                <td>11/06/2020</td>
-                                <td>Marcos</td>
-                                <td>11/06/2020</td>
-                                <td>11/06/2020</td>
-                                <td>Atividades Gerais</td>
-                                <td>
-                                    - Análise do feedback e finalização do ticket2351 ENC: 12.DO.13 - Cancelamento de Alvará
-                                    - Análise e e envio de feedback ao usuário ticket 2458 Correção dos casos rescindidos enviados para a carteira 915
-                                    - Cancelamento do chamado 2482 ENC: Ninho Verde I Eco Residence- Erro em baixa de parcelas
-                                    -  Análise e finalização ticke 1565  Resolvido: 08-IS-18 - Taxa de conservação.
-                                </td>
-                                <td>Aprovado</td>
-                            </tr>
+                            {!apontamentos.length && (
+                                <tr>
+                                    <td colSpan="8" className="text-center">Nenhum registro encontrado</td>
+                                </tr>
+                            )}
+                            {!!apontamentos.length && (
+                                apontamentos.map(apontamento => (
+                                    <tr>
+                                        <td>#</td>
+                                        <td>11/06/2020</td>
+                                        <td>{apontamento.range_analistas}</td>
+                                        <td>11/06/2020</td>
+                                        <td>11/06/2020</td>
+                                        <td>{apontamento.assunto}</td>
+                                        <td>{apontamento.descricao}</td>
+                                        <td>{apontamento.indicador_aprovacao}</td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </Table>
                 </div>
