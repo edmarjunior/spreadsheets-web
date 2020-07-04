@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Table } from "react-bootstrap";
+import { Button, Table, Dropdown } from "react-bootstrap";
+import { toast } from "react-toastify";
 
 import api from "../../../services/api";
 import { Form, Pill} from './styles';
 
 export default function Listagem() {
-
     const [times, setTimes] = useState([]);
     const [analistas, setAnalistas] = useState([]);
     const [apontamentos, setApontamentos] = useState([]);
+    const [isLoading, setLoading] = useState(false);
+
     const [situacoes, setSituacoes] = useState([
         {
             id: 1,
@@ -30,6 +32,21 @@ export default function Listagem() {
         },
     ]);
 
+    const [periodos, setPeriodos] = useState([
+        {
+          value: '6/2020',
+          nome: 'Junho/2020',
+          selecionado: true,
+          atual: true,
+        },
+        {
+          value: '5/2020',
+          nome: 'Maio/2020',
+          selecionado: false,
+          atual: false,
+        },
+    ]);
+
     useEffect(() => {
         const carregaDados = async () => {
             const { data: timesCadastrados } = await api.get('/times');
@@ -48,17 +65,45 @@ export default function Listagem() {
         carregaDados();
     }, [])
 
+    const selecionaPeriodo = (value) => {
+        setPeriodos(periodos.map(periodo => ({
+            ...periodo,
+            selecionado: periodo.value === value,
+        })))
+    }
+
     const selecionaTime = (id) => {
+        const selecionado = times.find(time => time.id === id).selecionado;
+
         setTimes(times.map(time => ({
             ...time,
-            selecionado: time.id === id ? !time.selecionado : time.selecionado,
+            selecionado: time.id === id ? !selecionado : time.selecionado,
+        })));
+
+        setAnalistas(analistas.map(analista => ({
+            ...analista,
+            selecionado: analista.time.id === id ? !selecionado : analista.selecionado,
         })));
     }
 
     const selecionaAnalista = (id) => {
-        setAnalistas(analistas.map(analista => ({
+
+        const analistasAtualizados = analistas.map(analista => ({
             ...analista,
             selecionado: analista.id === id ? !analista.selecionado : analista.selecionado,
+        }));
+
+        setAnalistas(analistasAtualizados);
+
+        const idTime = analistas.find(analista => analista.id === id).time.id;
+
+        const selecionaTime = analistasAtualizados
+            .filter(analista => analista.time.id === idTime)
+            .every(analista => analista.selecionado);
+
+        setTimes(times.map(time => ({
+            ...time,
+            selecionado: time.id === idTime ? selecionaTime : time.selecionado,
         })));
     }
 
@@ -83,6 +128,11 @@ export default function Listagem() {
         setSituacoes(situacoes.map(situacao => ({
             ...situacao,
             selecionado,
+        })));
+
+        setPeriodos(periodos.map(periodo => ({
+            ...periodo,
+            selecionado: periodo.atual,
         })));
     }
 
@@ -109,16 +159,39 @@ export default function Listagem() {
             rangeSituacoes = situacoesSelecionado.map(situacao => situacao.id).join(',');
         }
 
-        const { data: apontamentosEncontrados } = await api.get("/apontamentos", {
-            params: {
-                analistas: rangeAnalistas,
-                situacoes: rangeSituacoes,
-                mes: 6,
-                ano: 2020,
+        if (!analistasSelecionado.length || !situacoesSelecionado.length) {
+            if (!analistasSelecionado.length) {
+                toast.error("Favor informar algum analista", { position: 'bottom-left'});
             }
-        });
 
-        setApontamentos(apontamentosEncontrados);
+            if (!situacoesSelecionado.length) {
+                toast.error("Favor informar algum status", { position: 'bottom-left'});
+            }
+
+            return true;
+        }
+
+        try {
+            setLoading(true);
+
+            const [mes, ano] = periodos.find(x => x.selecionado).value.split('/');
+            
+            const { data: apontamentosEncontrados } = await api.get("/apontamentos", {
+                params: {
+                    analistas: rangeAnalistas,
+                    situacoes: rangeSituacoes,
+                    mes,
+                    ano,
+                }
+            });
+    
+            setApontamentos(apontamentosEncontrados);
+        } catch (error) {
+            toast.error(error.response.data.message, { position: 'bottom-left'});
+        } finally {
+            setLoading(false);
+        }
+       
     }
 
     return (
@@ -129,6 +202,26 @@ export default function Listagem() {
                 </div>
                 <div className="card-body">
                     <Form>
+                        <div className="row">
+                            <div className="col-1">
+                                <label>Periodo:</label>
+                            </div>
+                            <div className="col">
+                                <Dropdown>
+                                    <Dropdown.Toggle id="dropdown-basic">
+                                        {periodos.find(periodo => periodo.selecionado).nome}
+                                    </Dropdown.Toggle>
+
+                                    <Dropdown.Menu>
+                                        {periodos.map(periodo => (
+                                            <Dropdown.Item key={periodo.value} onClick={() => selecionaPeriodo(periodo.value)}>
+                                                {periodo.nome}
+                                            </Dropdown.Item>
+                                        ))}
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </div>
+                        </div>
                         <div className="row">
                             <div className="col">
                                 <label>Times:</label>
@@ -170,14 +263,18 @@ export default function Listagem() {
                         
                         <div className="d-flex justify-content-center">
                             <div>
-                                <Button onClick={() => selecionarFiltros(true)} variant="light">
+                                <Button onClick={() => selecionarFiltros(true)} variant="light"
+                                    disabled={isLoading}>
                                     Selecionar todos
                                 </Button>
-                                <Button onClick={() => selecionarFiltros(false)} variant="light" className="ml-1">
+                                <Button onClick={() => selecionarFiltros(false)} variant="light" className="ml-1"
+                                    disabled={isLoading}>
                                     Limpar filtros
                                 </Button>
-                                <Button type="submit" onClick={buscarApontamentos} style={{width: '200px'}} className="ml-1">
-                                    Buscar
+                                <Button type="submit" style={{width: '200px'}} className="ml-1"
+                                    onClick={!isLoading ? buscarApontamentos : null}
+                                    disabled={isLoading}>
+                                    {isLoading ? 'Carregando...' : 'Buscar'}
                                 </Button>
                             </div>
                         </div>
@@ -195,29 +292,37 @@ export default function Listagem() {
                                 <th>#</th>
                                 <th>Data da Solicitação</th>
                                 <th>Análista</th>
+                                <th>Tipo Atendimento</th>
+                                <th>Solicitante</th>
+                                <th>Área</th>
                                 <th>Início</th>
                                 <th>Término</th>
                                 <th>Assunto</th>
                                 <th>Descrição</th>
-                                <th>Status</th>
+                                <th>Tempo Gasto</th>
+                                <th>Aprovado?</th>
                             </tr>
                         </thead>
                         <tbody>
                             {!apontamentos.length && (
                                 <tr>
-                                    <td colSpan="8" className="text-center">Nenhum registro encontrado</td>
+                                    <td colSpan="12" className="text-center">Nenhum registro encontrado</td>
                                 </tr>
                             )}
                             {!!apontamentos.length && (
                                 apontamentos.map(apontamento => (
-                                    <tr>
-                                        <td>#</td>
-                                        <td>11/06/2020</td>
+                                    <tr key={apontamento.id}>
+                                        <td>{apontamento.contador}</td>
+                                        <td>{apontamento.data_solicitacao}</td>
                                         <td>{apontamento.range_analistas}</td>
-                                        <td>11/06/2020</td>
-                                        <td>11/06/2020</td>
+                                        <td>{apontamento.tipo_tendimento}</td>
+                                        <td>{apontamento.solicitante}</td>
+                                        <td>{apontamento.area}</td>
+                                        <td>{apontamento.inicio}</td>
+                                        <td>{apontamento.termino}</td>
                                         <td>{apontamento.assunto}</td>
                                         <td>{apontamento.descricao}</td>
+                                        <td>{apontamento.minutos_apontados}</td>
                                         <td>{apontamento.indicador_aprovacao}</td>
                                     </tr>
                                 ))

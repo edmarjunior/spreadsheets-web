@@ -285,7 +285,7 @@ export default function Dashboard() {
           <TableApontamentos>
             <thead>
               <tr>
-                <th>Análista</th>
+                <th>Analista</th>
                 <th onClick={() => handleOrdenacaoTrocaCampoAnalista('horas_apontadas')}>
                   Horas Apontadas
                   <div>
