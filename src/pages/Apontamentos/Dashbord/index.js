@@ -10,32 +10,33 @@ import { compare } from '../../../lib/helper';
 import { Container, TableApontamentos, Scroll, ThTime, TrTimes, Loading, ButtonSync } from './styles';
 
 export default function Dashboard() {
-  const [periodos, setPeriodos] = useState([
-    {
-      value: '6/2020',
-      nome: 'Junho/2020',
-      selected: true,
-    },
-    {
-      value: '5/2020',
-      nome: 'Maio/2020',
-      selected: false,
-    },
-  ]);
-
-  const [loading, setLoading] = useState(true);
+  const [periodos, setPeriodos] = useState([]);
   const [analistas, setAnalistas] = useState([]);
   const [times, setTimes] = useState([]);
+  
   const [total, setTotal] = useState({});
   const [checkAllTime, setCheckAllTime] = useState(true);
   const [order, setOrder] = useState({ campo: 'horas_aprovadas', direcao: 'desc' });
   const [orderTime, setOrderTime] = useState({ campo: 'horas_aprovadas', direcao: 'desc' });
+  const [loading, setLoading] = useState(true);
   const [loadingSync, setLoadingSync] = useState(false);
   
   useEffect(() => {
-    const [mes, ano] = periodos.find(x => x.selected).value.split('/');
-    getDados(mes, ano);
-  }, [periodos])
+    const getPeriodos = async () => {
+      const { data: periodosDisponiveis } = await api.get('apontamento-periodos');
+
+      setPeriodos(periodosDisponiveis.map(periodo => ({
+        ...periodo,
+        selecionado: periodo.id === 1,
+      })));
+
+      const { mes, ano } = periodosDisponiveis.find(periodo => periodo.id === 1);
+     
+      getDados(mes, ano);
+    };
+
+    getPeriodos();
+  }, [])
 
   async function getDados(mes, ano) {
     setLoading(true);
@@ -174,10 +175,16 @@ export default function Dashboard() {
   }
 
   function handlePeriodo(event) {
+    const id = +event.target.value;
+
     setPeriodos(periodos.map(periodo => ({
       ...periodo,
-      selected: periodo.value === event.target.value
-    })))
+      selecionado: periodo.id === id,
+    })));
+
+    const { mes, ano } = periodos.find(periodo => periodo.id === id);
+
+    getDados(mes, ano);
   }
 
   async function handleSincronizacao() {
@@ -188,26 +195,39 @@ export default function Dashboard() {
     }
 
     setLoadingSync(true);
-    const periodoSelecionado = periodos.find(x => x.selected);
-    const [mes, ano] = periodoSelecionado.value.split('/');
+    const periodoSelecionado = periodos.find(x => x.selecionado);
+    const { mes, ano } = periodoSelecionado;
 
-    const response = await api.get('apontamentos-planilha-sincronizar', {
-      params: {
-        mes,
-        ano,
+    try {
+      const response = await api.get('apontamentos-planilha-sincronizar', {
+        params: {
+          mes,
+          ano,
+        }
+      });
+      
+      const options = { autoClose: 25000 };
+  
+      toast.info(`Sucesso! Base de dados sincronizada com a planilha de ${periodoSelecionado.nome}`, options);
+      toast.info("Ultima linha lida da planilha: " + response.data.ultima_linha_lida, options);
+      toast.info("Quantidade apontamentos antes: " + response.data.qtd_apontamentos_antes, options);
+      toast.info("Quantidade apontamentos atual: " + response.data.qtd_apontamentos_atual, options);
+  
+      getDados(mes, ano);
+    } catch (error) {
+      const responseMessages = error?.response?.data?.messages;
+
+      if (responseMessages) {
+        responseMessages.forEach(message => {
+          toast.error(message, { position: 'bottom-left', autoClose: 120000})
+        })
+      } else {
+        toast.error('Falha na sincronização, contate o DDP', { position: 'bottom-left'})
       }
-    });
-
-    const options = {autoClose: 25000 };
-
-    toast.info(`Sucesso! Base de dados sincronizada com a planilha de ${periodoSelecionado.nome}`, options);
-    toast.info("Ultima linha lida da planilha: " + response.data.ultima_linha_lida, options);
-    toast.info("Quantidade apontamentos antes: " + response.data.qtd_apontamentos_antes, options);
-    toast.info("Quantidade apontamentos atual: " + response.data.qtd_apontamentos_atual, options);
-
-    setLoadingSync(false);
-
-    getDados(mes, ano);
+    } finally {
+      setLoadingSync(false);
+    }
+    
   }
 
   return (
@@ -217,7 +237,7 @@ export default function Dashboard() {
           <h1>Times</h1>
           <select onChange={handlePeriodo}>
             {periodos.map(periodo => (
-              <option key={periodo.value} value={periodo.value}>{periodo.nome}</option>
+              <option key={periodo.id} value={periodo.id}>{periodo.nome}</option>
             ))}
           </select>
         </header>
