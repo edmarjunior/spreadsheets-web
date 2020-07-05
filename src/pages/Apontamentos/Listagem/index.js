@@ -286,7 +286,7 @@ export default function Listagem() {
                     Apontamentos encontratos
                 </div>
                 <div className="card-body">
-                    <Table striped bordered hover size="sm">
+                    <Table striped bordered hover size="sm" style={{maxWidth: '100%'}}>
                         <thead>
                             <tr>
                                 <th>#</th>
