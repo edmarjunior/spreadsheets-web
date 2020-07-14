@@ -6,6 +6,8 @@ import api from "../../../services/api";
 import { Form, Pill} from './styles';
 
 export default function Listagem() {
+    const [periodos, setPeriodos] = useState([]);
+
     const [times, setTimes] = useState([]);
     const [analistas, setAnalistas] = useState([]);
     const [apontamentos, setApontamentos] = useState([]);
@@ -32,21 +34,6 @@ export default function Listagem() {
         },
     ]);
 
-    const [periodos, setPeriodos] = useState([
-        {
-          value: '6/2020',
-          nome: 'Junho/2020',
-          selecionado: true,
-          atual: true,
-        },
-        {
-          value: '5/2020',
-          nome: 'Maio/2020',
-          selecionado: false,
-          atual: false,
-        },
-    ]);
-
     useEffect(() => {
         const carregaDados = async () => {
             const { data: timesCadastrados } = await api.get('/times');
@@ -60,15 +47,22 @@ export default function Listagem() {
                 ...analista, 
                 selecionado: true
             })));
+
+            const { data: periodosDisponiveis } = await api.get('apontamento-periodos');
+
+            setPeriodos(periodosDisponiveis.map(periodo => ({
+                ...periodo,
+                selecionado: periodo.id === 1,
+            })));
         }
 
         carregaDados();
     }, [])
 
-    const selecionaPeriodo = (value) => {
+    const selecionaPeriodo = (id) => {
         setPeriodos(periodos.map(periodo => ({
             ...periodo,
-            selecionado: periodo.value === value,
+            selecionado: periodo.id === id,
         })))
     }
 
@@ -214,7 +208,7 @@ export default function Listagem() {
 
                                     <Dropdown.Menu>
                                         {periodos.map(periodo => (
-                                            <Dropdown.Item key={periodo.value} onClick={() => selecionaPeriodo(periodo.value)}>
+                                            <Dropdown.Item key={periodo.id} onClick={() => selecionaPeriodo(periodo.id)}>
                                                 {periodo.nome}
                                             </Dropdown.Item>
                                         ))}
