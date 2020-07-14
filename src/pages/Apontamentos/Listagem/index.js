@@ -48,11 +48,13 @@ export default function Listagem() {
                 selecionado: true
             })));
 
+            console.log("TESTE");
+
             const { data: periodosDisponiveis } = await api.get('apontamento-periodos');
 
             setPeriodos(periodosDisponiveis.map(periodo => ({
                 ...periodo,
-                selecionado: periodo.id === 1,
+                selecionado: periodo.id === 1000,
             })));
         }
 
@@ -126,7 +128,7 @@ export default function Listagem() {
 
         setPeriodos(periodos.map(periodo => ({
             ...periodo,
-            selecionado: periodo.atual,
+            selecionado: periodo.id === 1000,
         })));
     }
 
@@ -168,7 +170,8 @@ export default function Listagem() {
         try {
             setLoading(true);
 
-            const [mes, ano] = periodos.find(x => x.selecionado).value.split('/');
+            const periodoSelecionado = periodos.find(x => x.selecionado);
+            const { mes, ano } = periodoSelecionado;
             
             const { data: apontamentosEncontrados } = await api.get("/apontamentos", {
                 params: {
@@ -181,6 +184,7 @@ export default function Listagem() {
     
             setApontamentos(apontamentosEncontrados);
         } catch (error) {
+            console.log(error);
             toast.error(error.response.data.message, { position: 'bottom-left'});
         } finally {
             setLoading(false);
@@ -203,7 +207,7 @@ export default function Listagem() {
                             <div className="col">
                                 <Dropdown>
                                     <Dropdown.Toggle id="dropdown-basic">
-                                        {periodos.find(periodo => periodo.selecionado).nome}
+                                        {!!periodos.length ? periodos.find(periodo => periodo.selecionado).nome : 'carregando ...'}
                                     </Dropdown.Toggle>
 
                                     <Dropdown.Menu>

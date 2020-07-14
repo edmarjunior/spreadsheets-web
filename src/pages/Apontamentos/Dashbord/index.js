@@ -27,10 +27,10 @@ export default function Dashboard() {
 
       setPeriodos(periodosDisponiveis.map(periodo => ({
         ...periodo,
-        selecionado: periodo.id === 1,
+        selecionado: periodo.id === 1000,
       })));
 
-      const { mes, ano } = periodosDisponiveis.find(periodo => periodo.id === 1);
+      const { mes, ano } = periodosDisponiveis.find(periodo => periodo.id === 1000);
      
       getDados(mes, ano);
     };
